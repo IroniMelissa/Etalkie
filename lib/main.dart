@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -357,6 +359,234 @@ class TeacherDashboard extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 4. Audio - Call Screen
+// ==========================================
+class AudioCallScreen extends StatefulWidget {
+  final String remotePartyName; // Name of the person on the other end
+  final String userRole; // 'student' or 'teacher'
+
+  const AudioCallScreen(
+      {Key? key, required this.remotePartyName, required this.userRole})
+      : super(key: key);
+
+  @override
+  _AudioCallScreenState createState() => _AudioCallScreenState();
+}
+
+class _AudioCallScreenState extends State<AudioCallScreen> {
+  // Call States
+  bool _isMuted = false;
+  bool _isSpeakerOn = true;
+
+  // Timer States
+  Timer? _timer;
+  int _secondsElapsed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  // Formatting seconds into MM:SS display format
+  String _formatTime(int totalSeconds) {
+    int minutes = totalSeconds ~/ 60;
+    int seconds = totalSeconds % 60;
+    String minutesStr = minutes.toString().padLeft(2, '0');
+    String secondsStr = seconds.toString().padLeft(2, '0');
+    return "$minutesStr:$secondsStr";
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _secondsElapsed++;
+      });
+    });
+  }
+
+  void _endCall() {
+    _timer?.cancel();
+
+    // Show a small confirmation notification
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Call ended. Saving recording...'),
+          backgroundColor: Colors.amber),
+    );
+
+    // Close the call screen and go back to the previous dashboard
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff1a1a2e), // Deep dark premium background
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // TOP SECTION: Status & Indicator
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.lock, color: Colors.greenAccent, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Encrypted & Auto-Recording".toUpperCase(),
+                    style: const TextStyle(
+                        color: Colors.greenAccent,
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+
+            // MIDDLE SECTION: Profile avatar, Name, and Live Timer
+            Column(
+              children: [
+                // Animated Pulsing Avatar Placeholder
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 70,
+                      backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                    ),
+                    CircleAvatar(
+                      radius: 55,
+                      backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                    ),
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.blueAccent,
+                      child: Text(
+                        widget.remotePartyName[0].toUpperCase(),
+                        style: const TextStyle(
+                            fontSize: 36,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  widget.remotePartyName,
+                  style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.userRole == 'student'
+                      ? 'English Instructor'
+                      : 'Student',
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[400],
+                      letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 32),
+
+                // Real-time Display Clock
+                Text(
+                  _formatTime(_secondsElapsed),
+                  style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white,
+                      fontFamily: 'monospace'),
+                ),
+              ],
+            ),
+
+            // BOTTOM SECTION: Control Deck
+            Container(
+              padding: const EdgeInsets.all(32.0),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xff16162a),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              width: MediaQuery.of(context).size.width * 0.9,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Mute Microphone button
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        iconSize: 32,
+                        icon: Icon(_isMuted ? Icons.mic_off : Icons.mic),
+                        color: _isMuted ? Colors.redAccent : Colors.white,
+                        onPressed: () {
+                          setState(() {
+                            _isMuted = !_isMuted;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      Text(_isMuted ? "Muted" : "Mute",
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+
+                  // Red Hang-Up Call button
+                  FloatingActionButton(
+                    heroTag: "hangup",
+                    backgroundColor: Colors.red,
+                    onPressed: _endCall,
+                    child: const Icon(Icons.call_end,
+                        size: 28, color: Colors.white),
+                  ),
+
+                  // Speaker Toggle button
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        iconSize: 32,
+                        icon: Icon(
+                            _isSpeakerOn ? Icons.volume_up : Icons.volume_down),
+                        color: _isSpeakerOn ? Colors.blueAccent : Colors.white,
+                        onPressed: () {
+                          setState(() {
+                            _isSpeakerOn = !_isSpeakerOn;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      Text("Speaker",
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            )
           ],
         ),
       ),
