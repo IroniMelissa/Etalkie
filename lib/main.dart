@@ -222,6 +222,14 @@ class StudentDashboard extends StatelessWidget {
                     'Connect instantly with an online native teacher'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AudioCallScreen(
+                        remotePartyName: "Teacher Sarah",
+                        userRole: "student",
+                      ),
+                    ),
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Connecting to audio server...')));
                 },
